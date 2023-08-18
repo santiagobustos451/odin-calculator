@@ -2,13 +2,18 @@ class Entry {
     type;
     content;
 
-    constructor(type,content){
+    constructor(type,content,isPercent = false){
         this.type = type;
         this.content = content;
+        if(isPercent){
+            this.isPercent = isPercent;
+        }
     }
 }
 
 let currentInput = "";
+let currentInputNegative = false;
+let currentInputPercent = false;
 let lastAnswer = "";
 let operationHistory = [];
 let answer = document.querySelector(".answer");
@@ -48,15 +53,29 @@ function inputOperator(e) {
     console.log(operationHistory[operationHistory.length - 1]);
 
     switch(e.target.innerHTML){
+        case "+/-":
+            currentInputNegative = !currentInputNegative;
+
+            if(currentInputNegative) currentInputPercent = false;
+            break;
+        case "%":
+            currentInputPercent = !currentInputPercent;
+
+            if(currentInputPercent) currentInputNegative = false;
+            break;
         case "+":
         case "-":
         case "*":
         case "/":
-            if(currentInput === "" && operationHistory[operationHistory.length - 1].content !== ")" && operationHistory[operationHistory.length - 1]?.type !== "number") return;
-            numEntry = new Entry("number", currentInput);
-            opEntry = new Entry("operator", e.target.innerHTML);
+            if(currentInput === "" && !showingResult && operationHistory[operationHistory.length - 1].content !== ")" && operationHistory[operationHistory.length - 1]?.type !== "number") return;
+            
+            if(showingResult) {
+                currentInput = result;
+                showingResult = false;
+            }
 
-            if(numEntry.content !== "") operationHistory.push(numEntry);
+            addNumber(currentInput);
+            opEntry = new Entry("operator", e.target.innerHTML);
             operationHistory.push(opEntry)
 
             currentInput = "";
@@ -65,10 +84,9 @@ function inputOperator(e) {
         case ")":
             if(currentInput === "") return;
             if(findOpenPar()){
-                numEntry = new Entry("number", currentInput);
-                opEntry = new Entry("operator", e.target.innerHTML);
+                addNumber(currentInput);
 
-                operationHistory.push(numEntry);
+                opEntry = new Entry("operator", e.target.innerHTML);
                 operationHistory.push(opEntry)
 
                 currentInput = "";
@@ -94,10 +112,9 @@ function inputOperator(e) {
             }
             break;
         case "=":
-            if(currentInput === "") return;
+            if(currentInput === "" && operationHistory[operationHistory.length - 1].content !== ")") return;
 
-            numEntry = new Entry("number", currentInput);
-            operationHistory.push(numEntry)
+            addNumber(currentInput);
 
             while(findOpenPar()) {
                 operationHistory.push(new Entry("operator", ")"));
@@ -122,9 +139,24 @@ function isLastEquals(){
     return operationHistory[operationHistory.length - 1]?.operator === "=";
 }
 
+function addNumber(input){
+
+    if(currentInputNegative) input = "-" + input;
+    if(currentInputPercent) input = input * 0.01;
+
+    numEntry = new Entry("number", input, currentInputPercent);
+    if(numEntry.content !== "") operationHistory.push(numEntry);
+
+    currentInputNegative = false;
+    currentInputPercent = false;
+}
+
 function clearHistory(){
     operationHistory = [];
     currentInput = "";
+    currentInputNegative = false;
+    result = "";
+    showingResult = false;
 }
 
 function clearScreen(){
@@ -136,12 +168,23 @@ function updateScreen(){
     clearScreen();
 
     operationHistory.forEach(step => {
-        text = ` ${step.content}`;
+        if(step.type === "number" && parseFloat(step.content) < 0){
+            text = ` (- ${-step.content})`;
+        } else if(step.type === "number" && step.isPercent){
+            text = ` (${step.content*100} %)`;
+        } else {
+            text = ` ${step.content}`;
+        }       
 
         operation.innerHTML += text;
     })
 
     answer.innerHTML = showingResult ? result : currentInput;
+
+    if(!showingResult){
+        if(currentInputNegative) answer.innerHTML = `(- ${currentInput})`;
+        if(currentInputPercent) answer.innerHTML = `(${currentInput} %)`;
+    }
 }
 
 function findOpenPar(){
@@ -164,23 +207,13 @@ function operate(history){
 
     parsedHistory = parseEquals(parsedHistory);
 
-    console.log("Unparsed",parsedHistory);
-
     parsedHistory = parseParenthesis(parsedHistory);
-
-    console.log("Parsed par",parsedHistory);
 
     parsedHistory = parseMultiplication(parsedHistory);
 
-    console.log("Parsed mult",parsedHistory);
-
     parsedHistory = parseDivision(parsedHistory);
 
-    console.log("Parsed div",parsedHistory);
-
     parsedHistory = parseAdition(parsedHistory);
-
-    console.log("Parsed add",parsedHistory);
 
     return parsedHistory;
 }
@@ -253,16 +286,16 @@ function parseAdition(history) {
     return replacedHistory;
 }
 
-testHistory = [
-    {type: "number", content:"2"},
-    {type: "operator", content:"+"},
-    {type: "number", content:"2"},
+/*testHistory = [
+    {type: "number", content:"10"},
+    {type: "operator", content:"*"},
+    {type: "number", content:"-2"},
     {type: "operator", content:"*"},
     {type: "number", content:"2"},
     {type: "operator", content:"+"},
     {type: "number", content:"2"},
 ]
 
-//console.log(testHistory);
-//console.log(parseMultiplication(testHistory));
+console.log(testHistory);
+console.log(operate(testHistory));*/
 
