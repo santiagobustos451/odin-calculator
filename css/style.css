@@ -31,12 +31,19 @@ body {
 .display {
     border: 2px solid black;
     height: 3.5rem;
+    width: 12rem;
+    overflow-x: scroll;
     background-color: greenyellow;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     align-items: flex-end;
     padding: 1rem;
+}
+
+.display * {
+    width: max-content;
+    height: 1.5rem;
 }
 
 .answer {
@@ -58,6 +65,13 @@ button {
     border-radius: .2rem;
     width: 100%;
     padding: 1rem;
+}
+
+button.disabled {
+    pointer-events: none;
+    background-color: lightgray;
+    color: white;
+    border-color: gray;
 }
 
 button:hover {
