@@ -1,13 +1,8 @@
 class Entry {
-    type;
-    content;
-
-    constructor(type,content,isPercent = false){
+    constructor(type, content, isPercent = false) {
         this.type = type;
         this.content = content;
-        if(isPercent){
-            this.isPercent = isPercent;
-        }
+        this.isPercent = isPercent;
     }
 }
 
@@ -19,33 +14,47 @@ let operationHistory = [];
 let answer = document.querySelector(".answer");
 let operation = document.querySelector(".operation");
 let result = "";
-
 let showingResult = false;
 
 numberInputs = document.querySelectorAll("[data-number]");
 numberInputs.forEach(number => {
-    number.addEventListener('click', inputNumber)
+    number.addEventListener('click', inputNumber);
 });
 
 operatorInputs = document.querySelectorAll("[data-operator]");
-operatorInputs.forEach(number => {
-    number.addEventListener('click', inputOperator)
+operatorInputs.forEach(operator => {
+    operator.addEventListener('click', inputOperator);
 });
 
+window.addEventListener('keydown', keyboardInput);
+
+function keyboardInput(e){
+    e.preventDefault();
+    numberInputs.forEach(numberInput => {
+        if(e.key === numberInput.dataset.key){
+            numberInput.dispatchEvent(new Event("click"));
+        }
+    })
+    operatorInputs.forEach(operatorInput => {
+        if(e.key === operatorInput.dataset.key){
+            operatorInput.dispatchEvent(new Event("click"));
+        }
+    })
+}
+
 function inputNumber(e) {
-    if(isLastEquals()) clearHistory();
+    if (isLastEquals()) clearHistory();
 
-    if(operationHistory[operationHistory.length - 1]?.type === "number") return;
+    if (operationHistory[operationHistory.length - 1]?.type === "number") return;
 
-    if(e.target.innerHTML === "." && currentInput.includes(".")) return;
+    if (e.target.innerHTML === "." && currentInput.includes(".")) return;
 
-    if(showingResult) {
+    if (showingResult) {
         showingResult = false;
         clearHistory();
     }
 
     currentInput += e.target.innerHTML;
-
     updateScreen();
 }
 
@@ -96,6 +105,11 @@ function inputOperator(e) {
             opEntry = new Entry("operator", e.target.innerHTML);
             operationHistory.push(opEntry)
 
+            if(showingResult){
+                showingResult = false;
+                currentInput = result;
+            }
+
             break;
         case "AC":
             clearHistory();
@@ -104,7 +118,7 @@ function inputOperator(e) {
         case "CE":
             if(currentInput === ""){
                 operationHistory.pop();
-            } else if(operationHistory[operationHistory.length - 1].content === "=") {
+            } else if(operationHistory[operationHistory.length - 1]?.content === "=") {
                 operationHistory = operationHistory.slice(0,operationHistory.length - 2);
                 currentInput = "";
             } else {
@@ -128,8 +142,6 @@ function inputOperator(e) {
             showingResult = true;
             break;
     }
-
-    //console.log(currentOperation);
 
     updateScreen();
 }
@@ -164,26 +176,37 @@ function clearScreen(){
     operation.innerHTML = "";
 }
 
-function updateScreen(){
+function updateScreen() {
     clearScreen();
 
     operationHistory.forEach(step => {
-        if(step.type === "number" && parseFloat(step.content) < 0){
-            text = ` (- ${-step.content})`;
-        } else if(step.type === "number" && step.isPercent){
-            text = ` (${step.content*100} %)`;
+        let text = "";
+
+        if (step.type === "number") {
+            if (step.isPercent) {
+                text = ` (${parseFloat(step.content) * 100} %)`;
+            } else if (parseFloat(step.content) < 0) {
+                text = ` (- ${-parseFloat(step.content)})`;
+            } else {
+                text = ` ${step.content}`;
+            }
         } else {
             text = ` ${step.content}`;
-        }       
+        }
 
         operation.innerHTML += text;
-    })
+    });
 
-    answer.innerHTML = showingResult ? result : currentInput;
-
-    if(!showingResult){
-        if(currentInputNegative) answer.innerHTML = `(- ${currentInput})`;
-        if(currentInputPercent) answer.innerHTML = `(${currentInput} %)`;
+    if (showingResult) {
+        answer.innerHTML = result;
+    } else {
+        if (currentInputNegative) {
+            answer.innerHTML = `(- ${currentInput})`;
+        } else if (currentInputPercent) {
+            answer.innerHTML = `(${parseFloat(currentInput)} %)`;
+        } else {
+            answer.innerHTML = currentInput;
+        }
     }
 }
 
@@ -285,17 +308,4 @@ function parseAdition(history) {
 
     return replacedHistory;
 }
-
-/*testHistory = [
-    {type: "number", content:"10"},
-    {type: "operator", content:"*"},
-    {type: "number", content:"-2"},
-    {type: "operator", content:"*"},
-    {type: "number", content:"2"},
-    {type: "operator", content:"+"},
-    {type: "number", content:"2"},
-]
-
-console.log(testHistory);
-console.log(operate(testHistory));*/
 
